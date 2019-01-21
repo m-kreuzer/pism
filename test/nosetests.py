@@ -67,7 +67,8 @@ def printing_test():
 
 def random_vec_test():
     "Test methods creating random fields"
-    grid = create_dummy_grid()
+    grid = PISM.IceGrid_Shallow(PISM.Context().ctx, 1e6, 1e6, 0, 0, 61, 31,
+                                PISM.NOT_PERIODIC, PISM.CELL_CENTER)
 
     vec_scalar = PISM.vec.randVectorS(grid, 1.0)
     vec_vector = PISM.vec.randVectorV(grid, 2.0)
@@ -131,27 +132,6 @@ def vec_access_test():
         pass
 
 
-def toproczero_test():
-    "Test communication to processor 0"
-    grid = create_dummy_grid()
-
-    vec_scalar = PISM.vec.randVectorS(grid, 1.0)
-    vec_vector = PISM.vec.randVectorV(grid, 2.0)
-
-    tz = PISM.vec.ToProcZero(grid)
-    array_scalar_0 = tz.communicate(vec_scalar)
-
-    tz2 = PISM.vec.ToProcZero(grid, dof=2, dim=2)
-    array_vector_0 = tz2.communicate(vec_vector)
-
-    try:
-        tz3 = PISM.vec.ToProcZero(grid, dof=2, dim=3)
-        return False
-    except NotImplementedError:
-        # 3D fields are not supported (yet)
-        pass
-
-
 def create_modeldata_test():
     "Test creating the ModelData class"
     grid = create_dummy_grid()
@@ -185,6 +165,8 @@ def create_special_vecs_test():
 
     thk = PISM.model.createIceThicknessVec(grid)
 
+    sea_level = PISM.model.createSeaLevelVec(grid)
+
     usurfstore = PISM.model.createIceSurfaceStoreVec(grid)
 
     thkstore = PISM.model.createIceThicknessStoreVec(grid)
@@ -206,8 +188,6 @@ def create_special_vecs_test():
     bmr = PISM.model.createBasalMeltRateVec(grid)
 
     tillphi = PISM.model.createTillPhiVec(grid)
-
-    cell_area = PISM.model.createCellAreaVec(grid)
 
     basal_water = PISM.model.createBasalWaterVec(grid)
 
@@ -246,63 +226,6 @@ def create_special_vecs_test():
     vecs.mask
 
     return True
-
-
-def options_test():
-    "Test command-line option handling"
-    ctx = PISM.Context()
-
-    o = PISM.PETSc.Options()
-
-    M = PISM.optionsInt("-M", "description", default=100)
-    M = PISM.optionsInt("-M", "description", default=None)
-
-    S = PISM.optionsString("-string", "description", default="string")
-    S = PISM.optionsString("-string", "description", default=None)
-
-    R = PISM.optionsReal("-R", "description", default=1.5)
-    R = PISM.optionsReal("-R", "description", default=None)
-
-    o.setValue("-B", "on")
-    B = PISM.optionsFlag("-B", "description", default=False)
-    B = PISM.optionsFlag("B", "description", default=False)
-    B = PISM.optionsFlag("-B", "description", default=None)
-
-    o.setValue("-no_C", "on")
-    C = PISM.optionsFlag("C", "description", default=None)
-
-    D = PISM.optionsFlag("D", "description", default=None)
-    D = PISM.optionsFlag("D", "description", default=True)
-
-    o.setValue("-no_D", "on")
-    o.setValue("-D", "on")
-    try:
-        # should throw RuntimeError
-        D = PISM.optionsFlag("D", "description", default=None)
-        return False
-    except RuntimeError:
-        pass
-
-    o.setValue("-IA", "1,2,3")
-    IA = PISM.optionsIntArray("-IA", "description", default=[1, 2])
-    IA = PISM.optionsIntArray("-IA", "description", default=None)
-    IA2 = PISM.optionsIntArray("-IA2", "description", default=None)
-    IA2 = PISM.optionsIntArray("-IA2", "description", default=[1, 2])
-
-    o.setValue("-RA", "1,2,3")
-    RA = PISM.optionsRealArray("-RA", "description", default=[2, 3])
-    RA = PISM.optionsRealArray("-RA", "description", default=None)
-    RA2 = PISM.optionsRealArray("-RA2", "description", default=[2, 3])
-    RA2 = PISM.optionsRealArray("-RA2", "description", default=None)
-
-    o.setValue("-SA", "1,2,3")
-    SA = PISM.optionsStringArray("-SA", "description", default="one,two")
-    SA = PISM.optionsStringArray("-SA", "description", default=None)
-    SA2 = PISM.optionsStringArray("-SA2", "description", default="two,three")
-    SA2 = PISM.optionsStringArray("-SA2", "description", default=None)
-
-    M = PISM.optionsList("-L", "description", choices="one,two", default="one")
-    M = PISM.optionsList("-L", "description", choices="one,two", default=None)
 
 
 def pism_vars_test():
@@ -701,10 +624,11 @@ def flowlaw_test():
                        3.99496194e-18, 2.60900856e-15, 8.26634991e-15, 8.26634991e-15,
                        1.59798478e-17, 1.04360343e-14, 3.30653997e-14, 3.30653997e-14,
                        3.59546574e-17, 2.34810771e-14, 7.43971492e-14, 7.43971492e-14]
-    data["gk"] = [7.32439717e-17, 5.49629815e-15, 2.41713799e-14, 2.41713799e-14,
-                  2.16360102e-16, 1.93446849e-14, 9.04428380e-14, 9.04428380e-14,
-                  4.06191746e-16, 3.39770143e-14, 1.60574708e-13, 1.60574708e-13,
-                  6.68976826e-16, 4.80704753e-14, 2.27816175e-13, 2.27816175e-13]
+    data["gk"] = [1.1636334595808724e-16, 6.217445758362754e-15, 2.5309103327753672e-14,
+                  2.5309103327753672e-14, 2.5947947614616463e-16, 2.0065832524499375e-14,
+                  9.158056141786197e-14, 9.158056141786197e-14, 4.493111202368685e-16,
+                  3.469816186746473e-14, 1.6171243121742907e-13, 1.6171243121742907e-13,
+                  7.12096200221403e-16, 4.879162291119208e-14, 2.2895389865988545e-13, 2.2895389865988545e-13]
     data["gpbld"] = [4.65791754e-18, 1.45114704e-16, 4.54299921e-16, 8.66009225e-16,
                      1.16447938e-16, 3.62786761e-15, 1.13574980e-14, 2.16502306e-14,
                      4.65791754e-16, 1.45114704e-14, 4.54299921e-14, 8.66009225e-14,
@@ -721,10 +645,6 @@ def flowlaw_test():
                   1.16447938e-16, 3.62786761e-15, 1.13574980e-14, 1.13574980e-14,
                   4.65791754e-16, 1.45114704e-14, 4.54299921e-14, 4.54299921e-14,
                   1.04803145e-15, 3.26508084e-14, 1.02217482e-13, 1.02217482e-13]
-    data["gpbld3"] = [4.65791754e-18, 1.45114704e-16, 4.54299921e-16, 8.66009225e-16,
-                      1.16447938e-16, 3.62786761e-15, 1.13574980e-14, 2.16502306e-14,
-                      4.65791754e-16, 1.45114704e-14, 4.54299921e-14, 8.66009225e-14,
-                      1.04803145e-15, 3.26508084e-14, 1.02217482e-13, 1.94852076e-13]
 
     ctx = PISM.context_from_options(PISM.PETSc.COMM_WORLD, "flowlaw_test")
     EC = ctx.enthalpy_converter()
@@ -738,17 +658,16 @@ def ssa_trivial_test():
     "Test the SSA solver using a trivial setup."
 
     context = PISM.Context()
-    unit_system = context.unit_system
 
     L = 50.e3  # // 50km half-width
     H0 = 500  # // m
     dhdx = 0.005  # // pure number, slope of surface & bed
-    nu0 = PISM.convert(unit_system, 30.0, "MPa year", "Pa s")
+    nu0 = PISM.util.convert(30.0, "MPa year", "Pa s")
     tauc0 = 1.e4  # // 1kPa
 
     class TrivialSSARun(PISM.ssa.SSAExactTestCase):
         def _initGrid(self):
-            self.grid = PISM.IceGrid.Shallow(PISM.Context().ctx, L, L, 0, 0,
+            self.grid = PISM.IceGrid.Shallow(context.ctx, L, L, 0, 0,
                                              self.Mx, self.My, PISM.CELL_CORNER, PISM.NOT_PERIODIC)
 
         def _initPhysics(self):

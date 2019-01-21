@@ -37,7 +37,6 @@ options = PISM.PETSc.Options()
 def create_geometry(grid):
     geometry = PISM.Geometry(grid)
 
-    geometry.cell_area.set(grid.dx() * grid.dy())
     geometry.latitude.set(0.0)
     geometry.longitude.set(0.0)
 
@@ -327,6 +326,36 @@ class DeltaSMB(TestCase):
     def tearDown(self):
         os.remove(self.filename)
 
+class AnomalyBMB(TestCase):
+    def setUp(self):
+        self.filename = "delta_BMB_input.nc"
+        self.grid = dummy_grid()
+        self.geometry = create_geometry(self.grid)
+        self.model = PISM.OceanConstant(self.grid)
+        self.dBMB = -5.0
+
+        delta_BMB = PISM.IceModelVec2S(self.grid, "shelf_base_mass_flux_anomaly",
+                                       PISM.WITHOUT_GHOSTS)
+        delta_BMB.set_attrs("climate_forcing",
+                            "2D shelf base mass flux anomaly", "kg m-2 s-1", "")
+        delta_BMB.set(self.dBMB)
+
+        delta_BMB.dump(self.filename)
+
+    def runTest(self):
+        "Modifier Anomaly"
+
+        config.set_string("ocean.anomaly.file", self.filename)
+
+        modifier = PISM.OceanAnomaly(self.grid, self.model)
+
+        modifier.init(self.geometry)
+        modifier.update(self.geometry, 0, 1)
+
+        check_modifier(self.model, modifier, 0.0, self.dBMB, 0.0)
+
+    def tearDown(self):
+        os.remove(self.filename)
 
 class FracMBP(TestCase):
     def setUp(self):

@@ -1,6 +1,11 @@
 cmake_minimum_required (VERSION 3.1)
 project (Pism C CXX)
 
+if (NOT (${CMAKE_VERSION} VERSION_LESS "3.13"))
+  # Policy CMP0078 was introduced in 3.13. See "cmake --help-policies" for details.
+  cmake_policy(SET CMP0078 OLD)       #controls names of SWIG targets
+endif()
+
 # Require C++11 compiler support.
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -40,7 +45,7 @@ option (BUILD_SHARED_LIBS      "Build shared Pism libraries" ON)
 option (Pism_BUILD_PYTHON_BINDINGS "Build python bindings" OFF)
 option (Pism_BUILD_ICEBIN "Build PISM portions of IceBin library" OFF)
 option (Pism_BUILD_DOCS "Build PISM's documentation with 'make all'." OFF)
-option (Pism_USE_PROJ4 "Use Proj.4 to compute cell areas, longitudes, and latitudes." OFF)
+option (Pism_USE_PROJ4 "Use Proj.4 to compute longitudes and latitudes." OFF)
 option (Pism_USE_PARALLEL_NETCDF4 "Enables parallel NetCDF-4 I/O." OFF)
 option (Pism_USE_PNETCDF "Enables parallel NetCDF-3 I/O using PnetCDF." OFF)
 option (Pism_ENABLE_DOCUMENTATION "Enable targets building PISM's documentation." ON)
@@ -103,9 +108,8 @@ if (Pism_CODE_COVERAGE)
   endif()
   add_custom_target (coverage_report
     # remove coverage data from src/pythonbindings
-    COMMAND lcov -d ${Pism_BINARY_DIR}/src/pythonbindings -z
-    COMMAND lcov -d ${Pism_BINARY_DIR}/src/vdt -z
-    COMMAND lcov -q -b ${Pism_SOURCE_DIR} --no-external -d . -c -o pism-coverage.info
+    COMMAND lcov --directory ${Pism_BINARY_DIR}/src/pythonbindings -z
+    COMMAND lcov --base-directory ${Pism_SOURCE_DIR} --directory src --quiet --no-external --capture -o pism-coverage.info
     COMMAND genhtml -t "PISM Coverage report" -o cover --demangle-cpp --legend pism-coverage.info
     WORKING_DIRECTORY ${Pism_BINARY_DIR}
     VERBATIM
@@ -170,7 +174,7 @@ if (Pism_BUILD_PYTHON_BINDINGS)
     CACHE PATH "Python extension module installation directory." )
 endif ()
 
-# Do cell area computations the right way if we have proj.4.
+# Use PROJ.4 to compute latitudes and longitudes of grid points (if available).
 if (Pism_USE_PROJ4)
   add_definitions (-DPISM_USE_PROJ4=1)
 else()
@@ -178,7 +182,7 @@ else()
 endif()
 
 add_custom_target (etags
-  COMMAND find . -regextype posix-extended -regex ".*\\.(c|cc|h|hh)" | xargs etags --class-qualify --no-defines
+  COMMAND find . -regex ".*\\.(c|cc|h|hh)" | xargs etags --class-qualify --no-defines
   WORKING_DIRECTORY ${Pism_SOURCE_DIR}
   VERBATIM
 )

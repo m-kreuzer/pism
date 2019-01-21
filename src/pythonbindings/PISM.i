@@ -64,6 +64,7 @@
 #include "util/node_types.hh"
 
 #include "util/Time.hh"
+#include "util/Time_Calendar.hh"
 %}
 
 // Include petsc4py.i so that we get support for automatic handling of PetscErrorCode return values
@@ -193,6 +194,9 @@
 %feature("valuewrapper") pism::units::Unit;
 %include "util/Units.hh"
 
+%shared_ptr(pism::MaxTimestep)
+%include "util/MaxTimestep.hh"
+
 %include pism_DM.i
 %include pism_Vec.i
 /* End of independent PISM classes. */
@@ -215,6 +219,8 @@
 
 %shared_ptr(pism::Time);
 %include "util/Time.hh"
+%shared_ptr(pism::Time_Calendar);
+%include "util/Time_Calendar.hh"
 
 %include "util/Profiling.hh"
 %shared_ptr(pism::Context);
@@ -240,7 +246,6 @@
 
 %shared_ptr(pism::Diagnostic)
 %include "util/Diagnostic.hh"
-%include "util/MaxTimestep.hh"
 %include "stressbalance/timestepping.hh"
 
 %shared_ptr(pism::Component)
@@ -312,6 +317,9 @@
 %include pism_atmosphere.i
 
 %include pism_ocean.i
+
+/* surface models use atmosphere models as inputs so we need to define atmosphere models first */
+%include pism_atmosphere.i
 
 %include pism_surface.i
 

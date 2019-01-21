@@ -9,17 +9,10 @@ Used as a verification (and regression) test for LingleClarkSerial::bootstrap().
 import PISM
 import pylab as plt
 import numpy as np
+from PISM.util import convert
 
 config = PISM.Context().config
 log = PISM.Context().log
-
-# unit conversion shortcut
-
-
-def convert(x, u1, u2):
-    unit_system = PISM.Context().unit_system
-    return PISM.convert(unit_system, x, u1, u2)
-
 
 # constants
 standard_gravity = config.get_double("constants.standard_gravity")
@@ -58,7 +51,7 @@ def exact(dics_radius, disc_thickness, t, L, N):
 
 def modeled_time_dependent(dics_radius, disc_thickness, t_end, L, N, dt):
     "Use the LingleClark class to compute plate deflection."
-    M = 2 * N - 1
+    M = int(2 * N - 1)
 
     ctx = PISM.Context().ctx
     grid = PISM.IceGrid.Shallow(ctx, L, L, 0, 0, M, M, PISM.CELL_CORNER, PISM.NOT_PERIODIC)
@@ -100,19 +93,18 @@ def modeled_time_dependent(dics_radius, disc_thickness, t_end, L, N, dt):
         log.message(2, ".")
     log.message(2, "\n")
 
-    p0 = PISM.vec.ToProcZero(grid)
-
     # extract half of the x grid
     r = grid.x()[N-1:]
+
     # extract values along the x direction (along the radius of the disc)
-    z = p0.communicate(bed_model.bed_elevation())[N-1, N-1:]
+    z = bed_model.bed_elevation().numpy()[N-1, N-1:]
 
     return r, z
 
 
 def modeled_steady_state(dics_radius, disc_thickness, time, L, N):
     "Use the LingleClark class to compute plate deflection."
-    M = 2 * N - 1
+    M = int(2 * N - 1)
 
     ctx = PISM.Context().ctx
     grid = PISM.IceGrid.Shallow(ctx, L, L, 0, 0, M, M, PISM.CELL_CORNER, PISM.NOT_PERIODIC)
@@ -140,12 +132,11 @@ def modeled_steady_state(dics_radius, disc_thickness, time, L, N):
 
     bed_model.bootstrap(bed, bed_uplift, ice_thickness, sea_level)
 
-    p0 = PISM.vec.ToProcZero(grid)
-
     # extract half of the x grid
     r = grid.x()[N-1:]
+
     # extract values along the x direction (along the radius of the disc)
-    z = p0.communicate(bed_model.total_displacement())[N-1, N-1:]
+    z = bed_model.total_displacement().numpy()[N-1, N-1:]
 
     return r, z
 
