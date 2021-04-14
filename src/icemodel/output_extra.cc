@@ -293,7 +293,7 @@ void IceModel::write_extras() {
 
     save_variables(file,
                    m_extra_vars.empty() ? INCLUDE_MODEL_STATE : JUST_DIAGNOSTICS,
-                   m_extra_vars, PISM_FLOAT);
+                   m_extra_vars, PISM_DOUBLE);
 
     // Get the length of the time dimension *after* it is appended to.
     unsigned int time_length = file.inq_dimlen(time_name);
