@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -138,8 +138,8 @@ protected:
   virtual double depth_impl() const = 0;
   virtual unsigned int Mz_impl() const = 0;
 
-  virtual void define_model_state_impl(const PIO &output) const;
-  virtual void write_model_state_impl(const PIO &output) const;
+  virtual void define_model_state_impl(const File &output) const;
+  virtual void write_model_state_impl(const File &output) const;
 
   virtual DiagnosticList diagnostics_impl() const;
 protected:
@@ -148,8 +148,6 @@ protected:
 
   //! upward heat flux through the top surface of the bed thermal layer
   IceModelVec2S m_top_surface_flux;
-
-  double m_t, m_dt;
 };
 
 class BTU_geothermal_flux_at_ground_level : public Diag<BedThermalUnit> {

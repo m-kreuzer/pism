@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 header = """
 ..
@@ -62,7 +62,7 @@ with open("funding.csv", "r") as f:
         except:
             continue
 
-        if start_year <= year and year < end_year:
+        if start_year <= year and year <= end_year:
             try:
                 funding[agency].append(number)
             except:

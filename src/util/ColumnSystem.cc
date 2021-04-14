@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2018 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2019 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -59,7 +59,7 @@ TridiagonalSystem::TridiagonalSystem(unsigned int max_size,
 
 //! Zero all entries.
 void TridiagonalSystem::reset() {
-#if PISM_DEBUG==1
+#if Pism_DEBUG==1
   memset(&m_L[0],    0, (m_max_system_size)*sizeof(double));
   memset(&m_U[0],    0, (m_max_system_size)*sizeof(double));
   memset(&m_D[0],    0, (m_max_system_size)*sizeof(double));
@@ -193,6 +193,13 @@ void TridiagonalSystem::save_system_with_solution(const std::string &filename,
 }
 
 
+void TridiagonalSystem::solve(unsigned int system_size, std::vector<double> &result) {
+  result.resize(m_max_system_size);
+
+  solve(system_size, result.data());
+}
+
+
 //! The actual code for solving a tridiagonal system.
 /*!
 This is modified slightly from a Numerical Recipes version.
@@ -201,15 +208,13 @@ Input size n is size of instance.  Requires n <= TridiagonalSystem::m_max_system
 
 Solution of system in x.
  */
-void TridiagonalSystem::solve(unsigned int system_size, std::vector<double> &result) {
+void TridiagonalSystem::solve(unsigned int system_size, double *result) {
   assert(system_size >= 1);
   assert(system_size <= m_max_system_size);
 
   if (m_D[0] == 0.0) {
     throw RuntimeError(PISM_ERROR_LOCATION, "zero pivot at row 1");
   }
-
-  result.resize(m_max_system_size);
 
   double b = m_D[0];
 
@@ -322,7 +327,7 @@ void columnSystemCtx::init_column(int i, int j,
   m_solver->reset();
 
   // post-condition
-#if PISM_DEBUG==1
+#if Pism_DEBUG==1
   // check if m_ks is valid
   if (m_ks >= m_z.size()) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "ks = %d computed at i = %d, j = %d is invalid,\n"
